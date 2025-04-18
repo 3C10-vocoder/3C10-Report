@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+        });
+    </script>
+
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Keyboard Synthesizer with Drums and GUI</title>
@@ -153,6 +165,74 @@
         .components-table tr:hover {
             background-color: #e9f7fe;
         }
+        pre {
+            background-color: #282c34;
+            border: 1px solid #3e4451;
+            border-left: 3px solid #3498db;
+            color: #abb2bf;
+            page-break-inside: avoid;
+            font-family: "SFMono-Regular", Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 1.6em;
+            max-width: 100%;
+            overflow: auto;
+            padding: 1em 1.5em;
+            display: block;
+            word-wrap: break-word;
+            border-radius: 0 0 4px 4px;
+            max-height: 400px; /* Makes it scrollable after this height */
+        }
+
+        code {
+            font-family: "SFMono-Regular", Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+            background-color: #f0f0f0;
+            border-radius: 3px;
+            padding: 2px 4px;
+            color: #e06c75; /* Inline code color */
+        }
+
+        pre code {
+            background-color: transparent;
+            border-radius: 0;
+            padding: 0;
+            color: inherit;
+        }
+
+        .code-header {
+            background-color: #3498db;
+            color: white;
+            padding: 8px 15px;
+            font-family: "SFMono-Regular", Consolas, Monaco, monospace;
+            font-weight: bold;
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+            margin-bottom: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .code-container {
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* Syntax highlighting colors - basic set */
+        .hljs-keyword { color: #c678dd; } /* purple */
+        .hljs-built_in { color: #e6c07b; } /* yellow-ish */
+        .hljs-type { color: #e6c07b; } /* yellow-ish */
+        .hljs-literal { color: #56b6c2; } /* teal */
+        .hljs-number { color: #d19a66; } /* orange */
+        .hljs-regexp { color: #98c379; } /* green */
+        .hljs-string { color: #98c379; } /* green */
+        .hljs-subst { color: #e06c75; } /* red */
+        .hljs-symbol { color: #61aeee; } /* blue */
+        .hljs-class { color: #e6c07b; } /* yellow-ish */
+        .hljs-function { color: #61aeee; } /* blue */
+        .hljs-title { color: #61aeee; } /* blue */
+        .hljs-params { color: #abb2bf; } /* default text */
+        .hljs-comment { color: #5c6370; font-style: italic; } /* gray, italicized */
     </style>
 </head>
 <body>
@@ -380,9 +460,26 @@
                 
                 <li><strong>8Ω Speaker:</strong> The final component in our chain converts the electrical signal from the amplifier into sound waves we can hear. The 8Ω impedance matches well with the LM386's output characteristics.</li>
             </ul>
-
+            To experiment with the power amp, you can connect the input of the circuit to a PWM pin on an Arduino and use the "tone.h" library to play different frequencies.
         
         </p>
+    </section>
+
+    
+    <section class="Lesson 4: Create a GUI.">
+        <h2>Lesson 4: Create a GUI.</h2>
+        <p>
+        </p>
+
+        <div class="code-container">
+            <div class="code-header">
+                <span>Python Code for GUI</span>
+                <span class="code-language">python</span>
+            </div>
+            <pre><code class="language-python">
+                <!--enter code here -->
+            </code></pre>
+        </div>
     </section>
 
     <section class="How-Do-The-Components-Work?">
