@@ -668,6 +668,453 @@
     </section>
                
     
+
+    <section class="Lesson 3: Drum Kit"> 
+        
+        
+            <h2>Lesson 3: The Drum Kit</h2>
+            <p>The drum machine lets us play drums and sound effects</p>
+            <p> 
+                The drum kit uses 16 bit 22kHz lookup tables to play drum sounds.
+                To ensure that the lookup tables were correct we used some that we found on github
+    
+               <a href= "https://github.com/spanceac/electro-drums/tree/master/samples"> here</a>.
+
+                This allowed us to make sure our own code was working, without wondering wether the issue was our lookup tables. 
+                <br><br>
+                <h4>How the PWM works</h4>
+                To play these sounds we used a pulse width modulation (PWM) configured pin on the PICO (pin 0), 
+                this could be done using a digital to analog converter (DAC), as used in our synth. Ultimately, 
+                The decision to use PWM was taken to reduce the number of components and complexity. A low pass filter was 
+                used on the pwm output to smooth out the signal further. This can be seen on the breadboard diagram 
+                <br><br>
+                Although the samples are 16 bit, in order for the PWM output to keep up with the 22kHz sample rate 
+                ,we have to reduce the actual PWM resolution to 12 bit.
+                <br><br>
+            
+                As the resolution of a PWM signal increases, the number of “time slots” in each PWM cycle at which the pulse can be turned off increases. 
+                For 12 bit this value will be 4096, and for 16 bit it is 65536. This means that If we wanted to use the PWM to play 16-bit audio samples at 22kHz, 
+                we would  effectively need to be able to count from 0 - 65,536 at least 22 thousand times a second. 
+                This is not possible with the 125MHz clock speed of the PI PICO. 
+                So rather than passing the 16 bit samples to the PWM, we will pass 12 bit values (after the audio sample mix) to play. 
+                The following code snippet shows how we do this mapping before passing the value to the PWM.
+
+
+            </p>
+            <!-- Drum set description content here -->
+            
+            <div class="code-container">
+                <div class="code-header">
+                    <span>Mapping the mix to 12 bits</span>
+                    <span class="code-language">C</span>
+                </div>
+                <pre><code class="language-C">
+// dont let the total mixed value go over 16 bits
+// just set it to the max if it goes over
+if (samp_sum < -32768) {
+    samp_sum = -32768;
+} 
+else if (samp_sum > 32767) {
+    samp_sum = 32767;
+}
+                    
+// Map from [-32768, 32767] to [0, 4096] (signed 16 bit to unsigned 12 bit)
+int32_t shifted_mix = (int32_t)mix + 32768;         // shift all of the values to be positive
+int16_t scaled_mix = shifted_mix * 4096;            // mulitply by our PWM range
+uint16_t pwm_val = (uint16_t)(scaled_mix / 65536);  // scale it back down to the [0, 4096]
+// UNSIGNED for pwm!!
+
+pwm_set_gpio_level(pwm_output_pin, pwm_val);
+                </code></pre>
+            </div>
+            
+            <h4>The GPIO's</h4>
+
+            <p>  
+                There are two types of GPIO inputs, the capacitive touch sensors which trigger the drum sounds, and then the pushbuttons 
+                which we use to enter record mode and playback mode. Regardless of which GPIO is pressed we will enter the same interrupt service routine, 
+                this just reduces the codes complexity at the cost of some performance.
+                <br>
+                An important distinction between the buttons and the touch sensors is that the buttons are active low and the touch sensors are active high. 
+                This means we must set the buttons to be falling edge interrupts and the touch sensors to be rising edge interrupts.
+                For the functions that are used in this code snippet, you will need the pico-sdk.
+            </p>
+
+            <div class="code-container">
+                <div class="code-header">
+                    <span>Setting the GPIO interupts</span>
+                    <span class="code-language">C</span>
+                </div>
+                <pre><code class="language-C">
+// Set up the touch pads for interupts
+for (int i = 0; i < num_pads; i++) {
+    gpio_init(Drum_Pads[i]);
+    gpio_set_dir(Drum_Pads[i], GPIO_IN);
+    
+    // Use with_callback for all touch sensors
+    gpio_set_irq_enabled_with_callback(Drum_Pads[i],        // cycle through all the pads
+                                        GPIO_IRQ_EDGE_RISE,   // set at rising edge interupt
+                                        true,                 // we want the interupt to be working
+                                        &gpio_isr);           // use the gpio_isr function as a callback
+}
+
+// Set up the pushbuttons for interupts
+for (int i = 0; i < num_buttons; i++) {
+    // Configure pin as input with pull-up resistor
+    gpio_init(pusshbuttons[i]);
+    gpio_set_dir(pusshbuttons[i], GPIO_IN);
+    gpio_pull_up(pusshbuttons[i]);              // set a pullup resistor
+    
+    // Enable interrupt for falling edge (button press) and set callback
+    // callback not needed as they should default to the previously set callback
+    // included in case someone wishes to use only buttons in there project
+    gpio_set_irq_enabled_with_callback(pusshbuttons[i], 
+                                       GPIO_IRQ_EDGE_FALL, 
+                                       true, 
+                                       &gpio_isr);
+}
+                </code></pre>
+            </div>
+
+
+            <h4>Playing Samples</h4>
+            <p> 
+                To decide if a sample is currently playing, we set bits. 
+                This could be achieved with just an array of bools, but the binary operations are a more interesting 
+                approach that has the added benefit of being faster.This means we need 3 functions
+                <br>                
+                <ul>
+                    <li>Set a bit (tell the code that a sound is playing)</li>
+                    <li>Clear a bit (if a sound should stop playing)</li>
+                    <li>Check a bit (to see if a specific sound is playing)</li>
+                </ul>
+                The code for these functions can be seen in a snippet below. Note that it is very 
+                important to use the "voltile" keyword for the track_bitmap. This is because this holds
+                the bits that will actually be set or cleared depending on the samples that are currently
+                playing. This means that it can change depending on the gpio interupts that the CPU will not anticipate.
+            
+            </p>
+
+            <div class="code-container">
+                <div class="code-header">
+                    <span>Binary operation functions</span>
+                    <span class="code-language">C</span>
+                </div>
+                <pre><code class="language-C">
+void bit_set(volatile uint32_t *track_bitmap, uint8_t tracknumber) {
+    // OR the track bit position with 1 to set it
+    *track_bitmap |= 1 << tracknumber;
+}
+
+void bit_clr(volatile uint32_t *track_bitmap, uint8_t tracknumber) {
+    // AND the track bit position with 0 to clear it
+    *track_bitmap &= ~(1 << tracknumber);
+}
+
+uint8_t testbit(uint32_t track_bitmap, uint8_t tracknumber) {
+    // shift everything right by our track nunber and chekc its value
+    // AND with the mask 
+    return (track_bitmap >> tracknumber) & 0x01;
+}
+                </code></pre>
+            </div>
+
+            <h4> 
+                Putting these together
+            </h4>
+            <p> 
+                Now that we have gpio interupts and the binary operations, we can set bits using our touch pads.
+                This is done inside of the gpio_isr in the following lines
+            </p>
+            <div class="code-container">
+                <div class="code-header">
+                    <span>Setting a track to play</span>
+                    <span class="code-language">C</span>
+                </div>
+                <pre><code class="language-C">
+void gpio_isr(uint gpio, uint32_t events) {
+    . 
+    . 
+
+    if (is_touch_sensor) { // if the interupt was triggered by a touch sensor (drum pad)
+        . 
+        . 
+        .
+        bit_set(tracks_playing, touched_pad);                              // set the track to play
+        samples_left_to_play[touched_pad] = total_samples[touched_pad];    // Initiall, our samples left to play is ALL of the samples  
+        . 
+        return
+    }
+    . 
+    . 
+}
+                </code></pre>
+            </div>
+
+
+            <h4>How the audio actually plays</h4>
+            <p> 
+                A repeating_timer object is used to trigger a time interupt 22 thousand times a second.
+                this allows us to change the PWM to ouptut the next sample at 22kHz. There is a code snippet below that 
+                contains the logic we used to move from sample to sample at the sample rate.
+                <br><br>
+                The general idea is as follows:<br> 
+                <ol>
+                    <li>When it is time to move to the next sample</li>
+                    <li>Check which tracks are currently playing</li>
+                    <li>For each track that is playing, add its next sample to a running "mix" sum</li>
+                    <li>Decrement how many samples are left to play for that track</li>
+                </ol>
+                This value is then bounded inside [0,4095] as seen earlier, before being passed to the PWM.
+            </p>
+            
+            <div class="code-container">
+                <div class="code-header">
+                    <span>Playing Samples and mixing</span>
+                    <span class="code-language">C</span>
+                </div>
+                <pre><code class="language-C">
+int32_t samp_sum = 0;   // 32 bit integer for the raw sum of the samples
+                    
+// figure out which tracks are playing 
+for (int i = 0; i < TRACK_NR; i++) { // for every track we have
+
+    if (testbit(tracks_playing, i) == 1) { // if it is currently playing
+
+        // get the index of the sample we need to play
+        uint32_t current_sample_index = total_samples[i] - samples_left_to_play[i];
+
+        // if we still have samples left to play
+        // and if the index is valid
+        if (current_sample_index < total_samples[i] && tracks[i] != NULL) {  
+            samp_sum += tracks[i][current_sample_index];
+            samples_left_to_play[i]--;  // Decrement number of samples left to play
+            
+            if (samples_left_to_play[i] <= 0) {
+                bit_clr(tracks_playing, i);  // Finished playing this track
+            }
+        } else {
+            // we have completed playing that sample so just exit now
+            bit_clr(tracks_playing, i); // clear the bit so that we wont keep trying to play this track
+        
+        }
+    }
+}
+                </code></pre>
+            </div>
+
+        <h4>Making Drum Loops</h4>
+        <pr> 
+            IF you’d like to be able to set up drum loops, this section will outline how we did it. 
+            First we created a class called a LoopEvent, which contain two member variables; track and timestamp. 
+            This means that we can hold what drum has been triggered, and the time it was triggered at. 
+            <br><br>
+            To enter the mode where you can input the loop, there is a button and LED which can light up to indicate that we are in the recording mode. In the code this can just set a bool value to true. From here we enter a separate section of the code that does not just play the drum sounds but will record them as a LoopEvent and add them to an array.
+            
+            <ul>
+                <li>Track - what drum sample was triggered</li>
+                <li>Timestamp - time in mullisends since the loop started</li>
+
+            </ul>
+            
+            The code snippet below will go inside of the gpio_isr, It will only be called however if the record_mode boolean
+            is set to true.
+        </pr>
+            
+            <div class="code-container">
+                <div class="code-header">
+                    <span>Setting a track to play</span>
+                    <span class="code-language">C</span>
+                </div>
+                <pre><code class="language-C">
+// Add an event to the loop
+void add_loop_event(uint8_t track) {
+    if (loop_event_count < MAX_LOOP_EVENTS) {
+        uint64_t current_time = time_us_64();
+        uint64_t triggered_time = current_time - loop_start_time;
+        
+        loop_events[loop_event_count].track = track;
+        loop_events[loop_event_count].timestamp = triggered_time;
+        loop_event_count++;
+    }
+}
+                </code></pre>
+            </div>
+
+            <pr>This then calls for a playback function, that can read in this array of LoopEvents and 
+                play the drum sounds at the correct times.
+                <br>
+                This is done once again using a repeating_timer object, that repeats every 1 millisecond. 
+                If in playmode, this will then enter a check_loop_events() function, that will determine if a 
+                drum should be playing. If it determines that it should be, then it sets the bits necessary to 
+                signal to the program that those tracks are now playing.<br>
+                This will be handled by the portion of our code that checks what should be playing every 22kHz.
+                <br><br>
+                The general idea for this function should be:
+                <ol> 
+                    <li>If we are in the playback mode</li>
+                    <li>If any Loop Events should play in this timeslot</li>
+                    <li>Set the bits corresponing to the tracks that should play</li>
+                    <li>If we have played the entire loop, replay it</li>
+
+                </ol>
+
+                In practice we found that sometimes the repeating timer would some loops because it would be a millisencond or two late.
+                To combat this we added a window of time. Essentially saying that if any, tracks were due to play in the last 5 milliseconds,
+                set there bits. The reason that this works is that set bits to signify if a track is playing, not that it should start playing when we set it.
+                <br> 
+                This means that we can set a bit multiple times if we check the loop 4 times in the 5ms. This is fine as the number of samples 
+                left to play for each track is handled seperately, and setting these bits again does not interfere with it at all.
+
+                <br><br> 
+                So our final function for finding and playing loop events is shown below.
+
+            </pr>
+
+                <div class="code-container">
+                    <div class="code-header">
+                        <span>Playing the loop</span>
+                        <span class="code-language">C</span>
+                    </div>
+                    <pre><code class="language-C">
+void check_loop_events() {
+
+    // if we are in the playback loop mode
+    // and if we have something in the loop
+    if (play_mode && loop_duration > 0) {
+
+        // loop through all of the loop events
+        for (int i = 0; i < loop_event_count; i++) {
+
+            // check if each event should have played yet,
+            // have a window just to make sure we dont miss any of the beats, (even if they are slightly incorrectly timed)
+            if (loop_events[i].timestamp <= loop_timestamp && 
+                loop_events[i].timestamp > loop_timestamp - 5000) { // 5ms window
+
+                uint8_t track = loop_events[i].track; // get the track that we should be playing
+
+                if (track < TRACK_NR) { // if its an actual track
+                    bit_set(tracks_playing, track);
+                    samples_left_to_play[track] = total_samples[track];
+                }
+            }
+        }
+        
+        // if we have completed the loop then set the timestamp back to zero so we start again
+        if (loop_timestamp >= loop_duration) {
+
+            loop_timestamp = 0; 
+            
+        }
+    }
+}
+                    </code></pre>
+                </div>
+            
+            <h4>Adding sound effects!</h4>
+            <pr>
+                This was done by once again adding another button, which would put us into a “sound selection mode”.
+                The approach of our group was that when in this mode, you can repeatedly tap a touch pad to cycle 
+                through the available sounds. 
+                
+                The goal for this functionality was as follows:
+                <ol>
+                    <li>Tap the button to enter sound selection mode</li>
+                    <li>Cycle through the available sounds on any gpio you want</li>
+                        <ul>
+                            <li>Play a sample each time so that we know what we are selecting</li>
+                        </ul>
+                    <li>When we are done reconfiguring, tap the same button to solidify all of the tracks assigned to each button</li>
+                </ol>
+            </pr>
+
+            <div class="code-container">
+                <div class="code-header">
+                    <span>Configuring the Drum Pads </span>
+                    <span class="code-language">C</span>
+                </div>
+                <pre><code class="language-C">
+void gpio_isr(uint gpio, uint32_t events) {
+    . 
+    . 
+    . 
+    if (is_touch_sensor) {
+        . 
+        . 
+        .
+        if (sound_select_mode) {
+            if (current_button_to_configure == touched_pad) {
+                // Button already selected, cycle through available sounds, make sure to wrap around
+                currently_selected_sound = (currently_selected_sound + 1) % total_num_tracks;
+
+                // switch the track that is currently assigned to the pad
+                button_sound_mapping[touched_pad] = currently_selected_sound;
+                
+                // update how long the samples are so that the sound playing works
+                total_samples[touched_pad] = available_sounds_sizes[currently_selected_sound];
+
+                // change the current list of tracks that we play
+                tracks[touched_pad] = available_sounds[currently_selected_sound];
+                
+                // Play the new sound so we can hear what we are selecting 
+                bit_set(tracks_playing, touched_pad);
+                samples_left_to_play[touched_pad] = total_samples[touched_pad];
+                
+            } else {
+                // just touched a new pad
+                // set it as the drum pad we are currently configuring
+                current_button_to_configure = touched_pad;
+
+                // update the array that holds the sound currently corresponding to each touch pad
+                currently_selected_sound = button_sound_mapping[touched_pad];   
+                
+                // Play the current sound before we make any changes
+                bit_set(tracks_playing, touched_pad);
+                samples_left_to_play[touched_pad] = total_samples[touched_pad];
+            }
+            return;
+        }
+        . 
+        . 
+    }
+    . 
+    .
+}
+                </code></pre>
+            </div>
+
+            <h4>Some bits we left out</h4>
+
+            <p> 
+                There are some bits of code we left out here to make it more easy to digest, The full code files
+                will be available below. But there are a few things to note:
+
+                <ol>
+                    <li>The preprogrammed beat functionality</li>
+                        <ul>
+                            <li>This is just a matrix containing pre-computed loops</li>
+                            <li>It uses the LoopEvent class that was previously mentioned</li>
+                            <li>It is controlled by teh GUI</li>
+                        </ul>
+                    <li>The gpio_isr triggering handling the boolean values</li>
+                    <li>The timer callback functions that handle both the:</li>
+                        <ul>
+                            <li>Replaying the samples at 22kHz</li>
+                            <li>Recording and replaying loops</li>
+                        </ul>
+                </ol>
+            </p>
+
+            <div class="code-container">
+                <div class="code-header">
+                    <span>Pico-SDK for drum kit</span>
+                    <span class="code-language">C</span>
+                </div>
+                <pre><code id="drums-pico-code" class="language-c" data-src="code_snippets/PICO_drums.c"></code></pre>
+            </div>
+            
+    </section>
+
         <section class="Lesson 4: Converting YouTube Videos to Drum Samples.">
             <h2>Lesson 4: Converting YouTube Videos to Drum Samples.</h2>
             <p>
@@ -678,6 +1125,7 @@
                 <br>
                 We wrote a script that converts the wav file into a format that is compatible with our drum kit: an array of 16-bit integers (same format as drum samples).
                 The script generates a C header file that can be included in the drum kit code to make that sample available. Samples are limited to 4 seconds, which allowed us to fit three samples onto the Pico due to memory contraints.
+
     
     
                 <div class="code-container">
