@@ -108,7 +108,7 @@
         
         .featured-image {
             width: 100%;
-            height: 400px;
+            height: 600px;
             object-fit: cover;
             margin-bottom: 30px;
             background-color: #ddd;
@@ -275,13 +275,13 @@
         <div class="author-info">
             <img src="imgs/declan.png" alt="Author photo" class="author-image">
             <div class="author-details">
-                <div class="author-name">Ruairi, Otis, Aidan, Brandon</div>
+                <div class="author-name">Ruairi Mullally, Otis Doran, Aidan McNeill, Brandon Kekedjian</div>
                 <div class="post-date">April 22, 2025</div>
             </div>
         </div>
     </header>
     
-    <img src="imgs/keyb_synth.jpeg" alt="Featured image" class="featured-image">
+    <img src="imgs/full_deck.jpeg" alt="Featured image" class="featured-image">
     
     <section class="introduction">
         <h2>Introduction</h2>
@@ -499,6 +499,7 @@
 
     <section class="Lesson 2:  Tunable Polysynth with ADSR">
         <h2>Lesson 2: Tunable Polysynth with ADSR</h2>
+        <img src="imgs/keyb_synth.jpeg" alt="Featured image" class="featured-image">
         <p>
             Our goal in this lesson is to turn eight push‑buttons (or a tiny
             telephone‑style keypad) into a <strong>two‑voice digital synthesizer</strong>
@@ -514,7 +515,6 @@
         <img src="interactive_elems/SYNTH_bb.svg"
              alt="Poly‑synth build photo"
              class="project-image">
-        <div class="caption">Fig 3: Prototype synth on breadboard with keypad and six potentiometers.</div>
 
         
         <h3>Controls at a glance</h3>
@@ -1115,38 +1115,30 @@
 
 
     <section class="How-Do-The-Components-Work?">
-        <h2>How Do The Components Work?</h2>
-        <p>The DJ set consists of these components:</p>
-        <li>Keyboard Synthesizer featuring an ADSR (Attack, Decay, Sustain, Release) 
-            envelope controller, a 12-key numeric keypad interface, operational amplifier 
-            circuitry for signal conditioning, a Digital-to-Analog Converter (DAC) for
-             waveform generation, and an Arduino microcontroller for processing and control.</li>
-        <div style="text-align: center;">
-            <img src="imgs/Labelled_Synth.jpeg" alt="labelled image" class="labelled-image" width="500" height="475" style="border: 3px solid black;">
-        </div>
-        
-        <li>GUI features a real-time oscilloscope to vizualize the audio waveform, drum and
-             synthesizer screens, percentage bars for amplitude monitoring, and song screen 
-             to view the selected song from a list of preloaded audio sounds</li>
-
-        <!-- need a labelled picture of the GUI here -->   
-        
-        <li>Drum Set including 4 touchpads to simulate snare, kick, hi-hat, and toms. It uses a Raspberry Pi Pico
-            as the core controller, interfaced with an op amp, a digital-to-analogue converter (DAC), and a speaker
-            to produce the drum sounds instantaneously.</li>
-        <div style="text-align: center;">
-            <img src="imgs/Labelled_Drums.jpg" alt="labelled imge" class="labelled-image" width="500" height="350" style="border: 3px solid black;">
-        </div>
-    </section>
-    
-    <section id="building-hardware">
-        <h2>Building the Hardware</h2>
+        <h2>Lesson 6: Bringing it all together.</h2>
         <div style="text-align: center;">
             <img src="imgs/Full_DJ_Set_Picture.jpg" alt="labelled imge" class="labelled-image"width="750" height="500" style="border: 3px solid black;">
         </div>
         <p>Our DJ table consists of three main hardware components working together to
-             create a complete music production system. This section contains detailed 
+             create a complete music production system. This section contains 
              information on how to construct and integrate the final components.</p>
+
+             <li>Keyboard Synthesizer featuring an ADSR (Attack, Decay, Sustain, Release) 
+                envelope controller, a 12-key numeric keypad interface, operational amplifier 
+                circuitry for signal conditioning, a digital-to-analog Converter (DAC) for
+                waveform generation.</li>
+            <div style="text-align: center;">
+                <img src="imgs/Labelled_Synth.jpeg" alt="labelled image" class="labelled-image" width="500" height="475" style="border: 3px solid black;">
+            </div>
+            
+            <li>GUI features a real-time oscilloscope to vizualize the audio waveform,
+                 synthesizer screen with percentage bars to monitor ADSR values, and drum and song selection screens
+                 to view the selected drums/song from a list of preloaded sounds</li>
+    
+            <!-- need a labelled picture of the GUI here -->   
+            
+            <li>Drum Set including 5 capacitive touchpads to play sounds such as snare, kick, hi-hat, and audio samples. Pad assignments can be programmed on the fly by the user, looping through sound options. It has recording capabilities allowing the user to create a loop of sounds, that they can then play additional sounds over. </li>
+
         
         <div class="component-section">
             <h3>Summing Amplifier</h3>
@@ -1154,11 +1146,11 @@
                 <img src="imgs/NBMetadataCache.jpeg" alt="labelled imge" class="labelled-image" width="750" height="200">
             </div>
             <p>In order to combine all the sounds from the DJ set into a single speaker, a summing amplifier is used.
-                This component takes 2 audio inputs, one from the drums and the other from synthesizer, and mixes 
-                them into a single output signal that is then sent to the speaker.</p>
+                This component takes 2 audio inputs, one from the drum-kit (including audio samples) and the other from synthesizer, and mixes 
+                them into a single output signal that is then sent to the power amplifier and then the speaker.</p>
             </div>
             <div class="component-section">
-                <h3>Execution</h3>
+
                 <img src="/api/placeholder/800/350" alt="Fritzing of everything together" class="project-image">
                 <p> The schematic above illustrates how all components are interconnected to form a cohesive audio system, 
                     representing the completed project fully integrated into a functional DJ set. On the right, the synthesizer 
@@ -1171,55 +1163,17 @@
 
         </div>
         
-
     </section>
 
-    <section class="methodology">
-        <h2>My Approach</h2>
-        <p>To complete this project, I followed these steps:</p>
-        
-        <h3>Step 1: Research</h3>
-        <p>I began by researching [topic] using resources from our school library and online sources. Some key resources included [mention books, websites, or articles].</p>
-        
-        <h3>Step 2: Planning</h3>
-        <p>After gathering information, I created a plan for my project that included [describe your planning process].</p>
-        
-        <img src="/api/placeholder/800/350" alt="Planning diagram" class="project-image">
-        <div class="caption">Fig 1: My initial project plan showing [what the image shows]</div>
-        
-        <h3>Step 3: Execution</h3>
-        <p>With my plan in place, I began working on [describe what you did]. This involved [specific tasks or techniques].</p>
-    </section>
-    
-    <section class="results">
-        <h2>Results</h2>
-        <p>After completing my project, I discovered [describe your findings or results]. The most interesting aspects were:</p>
-        
-        <img src="/api/placeholder/800/350" alt="Project result" class="project-image">
-        <div class="caption">Fig 2: My final project showing [what the image shows]</div>
-        
-        <p>I was particularly proud of [specific achievement or aspect of your project].</p>
-    </section>
-    
-    <section class="challenges">
-        <h2>Challenges Faced</h2>
-        <p>This project wasn't without its difficulties. Some challenges I encountered included:</p>
-        <ul>
-            <li><strong>Challenge 1:</strong> [Describe a challenge and how you overcame it]</li>
-            <li><strong>Challenge 2:</strong> [Describe another challenge and how you overcame it]</li>
-            <li><strong>Challenge 3:</strong> [Describe another challenge and how you overcame it]</li>
-        </ul>
-    </section>
     
     <section class="conclusion">
         <h2>Conclusion</h2>
-        <p>Overall, this project taught me a lot about [topic]. I learned that [key insight 1] and discovered that [key insight 2]. If I were to do this project again, I would [what you would do differently].</p>
-        
-        <p>I would like to thank [acknowledge anyone who helped you] for their support and guidance throughout this project.</p>
+        <p>
+        </p>
     </section>
     
     <footer>
-        <p>© 2025 Aidan, Ruairi, Otis & Brandon  | Trinity College Dublin</p>
+        <p>© 2025 Ruairi Mullally, Otis Doran, Aidan McNeill, & Brandon Kekedjian  | Trinity College Dublin</p>
         <p>Created for 3C10 - Circuits & Systems Design</p>
     </footer>
 </body>
