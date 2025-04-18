@@ -510,10 +510,12 @@
             artefact‑free notes through a speaker.
         </p>
         
+
         <img src="interactive_elems/SYNTH_bb.svg"
              alt="Poly‑synth build photo"
              class="project-image">
         <div class="caption">Fig 3: Prototype synth on breadboard with keypad and six potentiometers.</div>
+
         
         <h3>Controls at a glance</h3>
         <ul>
@@ -1067,6 +1069,7 @@
                 
             </ul>
 
+
             <div class="code-container">
                 <div class="code-header">
                     <span>Arduino Code for GUI</span>
@@ -1080,7 +1083,6 @@
             
         </p>
     </section>
-
     <section class="How-Do-The-Components-Work?">
         <h2>How Do The Components Work?</h2>
         <p>The DJ set consists of these components:</p>
@@ -1088,7 +1090,7 @@
             envelope controller, a 12-key numeric keypad interface, operational amplifier 
             circuitry for signal conditioning, a Digital-to-Analog Converter (DAC) for
              waveform generation, and an Arduino microcontroller for processing and control.</li>
-        <img src="imgs/Labelled_Synth.jpeg" alt="labelled imge" class="labelled-image" width="500" height="450">
+        <img src="imgs/Labelled_Synth.jpeg" alt="labelled imge" class="labelled-image" width="700" height="600">
         
         <li>GUI features a real-time oscilloscope to vizualize the audio waveform, drum and
              synthesizer screens, percentage bars for amplitude monitoring, and song screen 
@@ -1099,53 +1101,38 @@
         <li>Drum Set including 4 touchpads to simulate snare, kick, hi-hat, and toms. It uses a Raspberry Pi Pico
             as the core controller, interfaced with an op amp, a digital-to-analogue converter (DAC), and a speaker
             to produce the drum sounds instantaneously.</li>
-        <img src="imgs/Labelled_Drums.jpg" alt="labelled imge" class="labelled-image" width="500" height="350">
+        <img src="imgs/Labelled_Drums.jpg" alt="labelled imge" class="labelled-image" width="750" height="500">
     </section>
     
     <section id="building-hardware">
         <h2>Building the Hardware</h2>
+        <img src="imgs/Full_DJ_Set_Picture.jpg" alt="labelled imge" class="labelled-image"width="750" height="500">
         <p>Our DJ table consists of three main hardware components working together to
-             create a complete music production system. Below is a break down each component
-              with detailed information on how they were constructed and integrated.</p>
+             create a complete music production system. This section contains detailed 
+             information on how to construct and integrate the final components.</p>
         
         <div class="component-section">
-            <h3>The Drum Set</h3>
-            <p>The drum machine component allows for creating rhythm patterns with bass, snare, and hi-hat sounds.</p>
-            
-            <!-- Drum set description content here -->
-            
-            <div class="schematic-container">
-                <h4>Drum Set Circuit Schematic</h4>
-                <!-- Insert drum set circuit schematic image here -->
-                <img src="images/drum-circuit-schematic.png" alt="Drum Set Circuit Schematic" class="schematic-image">
+            <h3>Summing Amplifier</h3>
+            <img src="imgs/NBMetadataCache.jpeg" alt="labelled imge" class="labelled-image" width="750" height="200">
+            <p>In order to combine all the sounds from the DJ set into a single speaker, a summing amplifier is used.
+                This component takes 2 audio inputs, one from the drums and the other from synthesizer, and mixes 
+                them into a single output signal that is then sent to the speaker.</p>
             </div>
+            <div class="component-section">
+                <h3>Execution</h3>
+                <img src="/api/placeholder/800/350" alt="Fritzing of everything together" class="project-image">
+                <p> The schematic above illustrates how all components are interconnected to form a cohesive audio system, 
+                    representing the completed project fully integrated into a functional DJ set. On the right, the synthesizer 
+                    circuit generates analog audio signals controlled by the ADSR, while the drum module on the left produces 
+                    digital drum sounds that are converted to analog using a DAC. Both of these outputs are fed into a summing 
+                    amplifier in the middle, which combines the signals into a single output that drives the speaker on the 
+                    far left. The GUI, located on the blue tray above, has the ability to play prerecorded songs and beats, as 
+                    well as display a simplified oscilloscope to visualize changes in the electrical signal over time. </p>
+            </div>
+
         </div>
         
-        <div class="component-section">
-            <h3>The Synthesizer</h3>
-            <p>Our synthesizer features a complete ADSR (Attack, Decay, Sustain, Release) envelope controller for shaping sound characteristics.</p>
-            
-            <!-- Synthesizer description content here -->
-            
-            <div class="schematic-container">
-                <h4>Synthesizer Circuit Schematic</h4>
-                <!-- Insert synthesizer circuit schematic image here -->
-                <img src="images/synth-circuit-schematic.png" alt="Synthesizer Circuit Schematic" class="schematic-image">
-            </div>
-        </div>
-        
-        <div class="component-section">
-            <h3>The GUI</h3>
-            <p>The graphical user interface provides visual feedback and control over all aspects of the DJ table system.</p>
-            
-            <!-- GUI description content here -->
-            
-            <div class="schematic-container">
-                <h4>GUI Connection Diagram</h4>
-                <!-- Insert GUI connection diagram here -->
-                <img src="images/gui-connection-diagram.png" alt="GUI Connection Diagram" class="schematic-image">
-            </div>
-        </div>
+
     </section>
 
     <section class="methodology">
