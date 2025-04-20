@@ -1,4 +1,4 @@
-#include &lt;SPI.h&gt;
+#include SPI.h
 
 // -------------------- Pin Definitions --------------------
 #define CS_PIN           10
